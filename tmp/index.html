@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="./styles/admin.css" rel="stylesheet">
+<link rel="stylesheet" href="./styles/bootstrap.css">
+<link rel="stylesheet" href="./styles/jquery-ui.css">
+
+<title>语言导航</title>
+	<style>
+	html { overflow: hidden; }
+
+	canvas { 
+		display: inline-block; 
+		background: #202020; 
+		width: 95%;
+		height: 45%;
+		box-shadow: 0px 0px 10px blue;
+	}
+
+	#record { height: 50px; }
+	#record.recording { 
+		background: red;
+		background: -webkit-radial-gradient(center, ellipse cover, #ff0000 0%,lightgrey 75%,lightgrey 100%,#7db9e8 100%); 
+		background: -moz-radial-gradient(center, ellipse cover, #ff0000 0%,lightgrey 75%,lightgrey 100%,#7db9e8 100%); 
+		background: radial-gradient(center, ellipse cover, #ff0000 0%,lightgrey 75%,lightgrey 100%,#7db9e8 100%); 
+	}
+
+
+	</style>
+    <script src="./scripts/lib/require.js" data-main="./scripts/app.js" async></script>
+	<script src="js/audiodisplay.js"></script>
+	<script src="js/recorderjs/recorder.js"></script>
+	<script src="js/main.js"></script>
+</head>
+<body>
+    <div class="header">
+		<div id="logo">
+			<img src="./images/logo.png" />
+		</div>
+		<div id="seperator"></div>
+		<div class="title">中国银行</div>
+		<div class="adminInfo">
+                <div id="controls">
+		<img id="record" src="img/mic128.png" onclick="toggleRecording(this);">
+        <audio id='audioPlayer' src='./audio/welcome.mp3' autoplay='autoplay'> </audio>
+		<!--<a id="save" href="#"><img src="img/save.svg"></a>-->
+	</div>
+		</div>
+    </div>
+    <div id='mainbody'></div>
+</body>
+
+</html>
+<script src="./scripts/lib/require.js" data-main="./scripts/app.js" async></script>

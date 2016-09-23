@@ -1,0 +1,15 @@
+/*运营管理平台登录页面*/
+*{margin:0px;padding:0px;}
+body{width:100%;height:100%;background-color:#ffffff;font-family:'微软雅黑','Helvetica Neue',Helvetica,Arial,Sans-serif;position:absolute;}
+
+.login_main{width:100%;height:100%;background-image:url(../images/login.png);background-repeat:no-repeat;background-position:center 20%;border:1px double #FFFFFF;display:block;position:relative;}
+.login_box{top:30%;left:54%;border:1px solid #ccc;background-color:#f5d0d6;display:inline-block;width:320px;height:258px;text-align:left;border-radius:6px;padding:20px;font-family:'微软雅黑';color:#625255;font-weight:700;position:absolute;}
+.login_top{border-bottom:1px solid #666;font-size:18px;color:#444444;line-height:1.7;margin-top:13px;margin-bottom:30px;}
+.login_username{margin-bottom: 30px;}
+.login_username span{font-size: 15px;}
+.login_username #login_admin_username{padding-left:20px;width:200px;height:28px;margin-left:20px;line-height:22px;font-size:15px;font-family:'微软雅黑';color:#625255;font-weight:700;}
+.login_password{margin-bottom: 35px;}
+.login_password span{font-size: 15px;}
+.login_password #login_admin_password{padding-left:20px;width:200px;height:28px;margin-left:35px;line-height:22px;font-size:15px;font-family:'微软雅黑';color:#625255;font-weight:700;}
+.login_button{margin-bottom: 30px;}
+.login_button #login_admin_button{display:inline-block;background:#e25050;color:#fff;width:160px;height:33px;letter-spacing:20px;border:none;border-radius:4px;margin-left:80px;cursor:pointer;font-weight:700;font-size:15px;padding-left:20px;}
