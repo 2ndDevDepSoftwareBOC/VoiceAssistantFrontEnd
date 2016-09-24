@@ -26,28 +26,31 @@ var canvasWidth, canvasHeight;
 var recIndex = 0;
 var functionId = null;
 var init = 0;
-var gBlob;
-var gUrl;
-/* TODO: 
+var curStatus = 'confirm';
 
-- offer mono option 
-- "Monitor input" switch 
-*/
+var controls = {
+    "100100": ["innerbankTransfer", "interbankTransfer"],
+    "100103": "queryBill",
+    "100101": "innerbankTransfer",
+    "100102": "interbankTransfer"
+};
+var controlText = {
+    innerbankTransfer: "行内转账",
+    interbankTransfer: "跨行转账",
+    "100100":"请问收款人是中行客户还是非中行客户?"
+};
+var parameters = {
+    "100101": ["transferInAcc", "transferAmount"],
+    "100102": [],
+};
+var parametersText = {
+    transferInAcc: "请问收款人是谁？",
+    transferAmount: "请问您要转出的金额是多少？"
+};
+var curParameter = {};
 
-// function saveAudio() { 
-//     // audioRecorder.exportWAV( doneEncoding ); 
-//     // could get mono instead by saying 
-//     audioRecorder.exportMonoWAV( doneEncoding ); 
-// } 
 
 function gotBuffers(buffers) {
-    /* var canvas = document.getElementById( "wavedisplay" ); 
-
-    drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buffers[0] ); */
-
-    // the ONLY time gotBuffers is called is right after a new recording is completed - 
-    // so here's where we should set up the download. 
-    // audioRecorder.exportWAV( doneEncoding ); 
     audioRecorder.exportMonoWAV(doneEncoding);
 }
 
@@ -81,92 +84,127 @@ function postMessage(url, data, callback) {
     xhr.send(data);
 }
 
-function askTransferAmount() {
-    postMessage("/voiceAssistant/question", (new FormData()).append("question", "请问您的转出金额是多少？"), function (data) {
+function ask(str) {
+    var formdata = new FormData();
+    formdata.append("question", str)
 
+    postMessage("/voiceAssistant/question", formdata, function(data) {
         audioPlay(data.audio);
-        
-        // var transferAmount = data.number;
-        // if (transferAmount) {
-        //     $("#transferAmount").val(transferAmount);
-        // }
-        // else {
-        //     asktransferAmount();
-        // }
     });
 }
+function audioPlay(audio) {
+    var player = $("#audioPlayer");
 
-function askTransferInAcc() {
-    postMessage("/voiceAssistant/question", (new FormData()).append("question", "请问您要转入的账户是哪个？"), function () {
-
-        audioPlay(data.audio);
-        // var transferInAcc = data.person;
-        // if (transferInAcc) {
-        //     $("#transferInAcc").val(transferInAcc);
-        // }
-        // else {
-        //     askTransferInAcc();
-        // }
-        
-    });
+    player = player[0] || player;
+    player.src = audio;
+    player.play();
+    player.onended = function () {
+        $("#record").click();
+    };
 }
-function audioPlay(audio) 
-    { 
-        var player = $("#audioPlayer");
+function redirect(blob) {
+    url = "/voiceAssistant/redirect";
+    var form = new FormData();
+    form.append("file", blob);
+    //form.append("functionId", functionId); 
+    postMessage(url, form, function(data) {
+        //var url = data.urlName;
+        var transferAmount = data.number;
+        var transferInAcc = data.person;
+        functionId = data.functionId;
         
-        player = player[0] || player;
-        player.src = audio;
-        player.play();
-        player.onended=function()
-        {
-            $("#record").click();
-            // if (!audioRecorder)
-            //     return;
-            // e.classList.add("recording");
-            // audioRecorder.clear();
-            // audioRecorder.record();
-        };
-    }
+        
 
-function doneEncoding(blob) {
-    /* Recorder.setupDownload( blob, "myRecording" + ((recIndex<10)?"0":"") + recIndex + ".wav" ); 
-    recIndex++; */
+        if (transferInAcc == null) {
+            var text = controlText[functionId];
+            
+            ask(text);
+        }
+        else {
+            if (transferInAcc.indexOf("李"))
+            {
+                functionId="100101";
+            }
+            else
+            {
+                functionId="100102";
+            }
+            $("#" + controls[functionId]).click();
+            var param = getStillNullParameter(functionId);
+            if (param) {
+                ask(parametersText[param], parameters[param]);
+            }
 
+        }
+    
+    
+    });
+} 
 
+function answer(blob, str) {
     url = "/voiceAssistant/answer";
     var form = new FormData();
     form.append("file", blob);
     form.append("functionId", functionId);
+    postMessage(url, form, function(data) {
 
-    if (functionId == null)
-    {
-        url = "/voiceAssistant/redirect";
+        if(str == "confirm")
+        {
+            if (data.answer.indexOf("中行") >=0 || data.answer.indexOf("其他") >= 0)
+            {
+                if (data.answer.indexOf("中行") >=0 )
+                {
+                    functionId = "100101";
+                }
+                else
+                {
+                    functionId = "100102";
+                }
+                $("#" + controls[functionId]).click();
+            }
+        }
+        else if (str == "transferAmount")
+        {
+            var reg = new RegExp("^[0-9]*$");
+            if (reg.test(data.answer))
+            {
+                alert(data.answer);
+                curParameter[str] = data.answer
+            }
+            
+
+        }
+        else if (str == "transferInAcc")
+        {
+            alert(data.answer);
+            curParameter[str] = data.answer;    
+        }
+        var param = getStillNullParameter(functionId);
+        if (param) {
+            ask(parametersText[param]);
+            curStatus = param;
+        }
+
+    } );
+} 
+
+function getStillNullParameter(founctionId) {
+    for (var i in parameters[founctionId]) {
+        if (!curParameter[parameters[functionId][i]]) {
+            return parameters[functionId][i]
+        }
     }
-    
+    return null;
+}
 
-    postMessage(url, form, function (data) {
-        var url = data.urlName;
-        functionId = data.functionId;
-        var transferAmount = data.number;
-        var transferInAcc = data.person;
+function doneEncoding(blob) {
+    if (functionId == null ) {
+        redirect(blob);
+    }
+    else {
+        answer(blob, curStatus)
+    }
 
-        if (url) {
-            $("#" + url).click();
-        }
-
-        if (transferInAcc) {
-            $("#transferInAcc").val(transferInAcc);
-        }
-        else {
-            //askTransferInAcc();
-        }
-        if (transferAmount) {
-            $("#transferAmount").val(transferAmount);
-        }
-        else {
-            askTransferAmount();
-        }
-    });
 }
 
 
@@ -187,17 +225,17 @@ function toggleRecording(e) {
             xhr.onreadystatechange = callback;
             var callback = function (data) {
                 audioPlay(data.audio);
-                
+
             };
             url = "/voiceAssistant/question";
-            //xhr.open("POST", url);
+            //xhr.open("POST", url); 
             var form = new FormData();
             form.append("question", "请问你需要什么帮助？");
             form.append("functionId", functionId);
-            //xhr.send(form);
-            postMessage(url,form,callback);
+            //xhr.send(form); 
+            postMessage(url, form, callback);
             init = 1;
-           
+
 
         }
         else {
@@ -227,41 +265,6 @@ function cancelAnalyserUpdates() {
 }
 
 function updateAnalysers(time) {
-    /* if (!analyserContext) { 
-        var canvas = document.getElementById("analyser"); 
-        canvasWidth = canvas.width; 
-        canvasHeight = canvas.height; 
-        analyserContext = canvas.getContext('2d'); 
-    } */
-
-    /*     // analyzer draw code here 
-        { 
-            var SPACING = 3; 
-            var BAR_WIDTH = 1; 
-            var numBars = Math.round(canvasWidth / SPACING); 
-            var freqByteData = new Uint8Array(analyserNode.frequencyBinCount); 
-    
-            analyserNode.getByteFrequencyData(freqByteData); 
-    
-            analyserContext.clearRect(0, 0, canvasWidth, canvasHeight); 
-            analyserContext.fillStyle = '#F6D565'; 
-            analyserContext.lineCap = 'round'; 
-            var multiplier = analyserNode.frequencyBinCount / numBars; 
-    
-             // Draw rectangle for each frequency bin. 
-            for (var i = 0; i < numBars; ++i) { 
-                var magnitude = 0; 
-                var offset = Math.floor( i * multiplier ); 
-                // gotta sum/average the block, or we miss narrow-bandwidth spikes 
-                for (var j = 0; j< multiplier; j++) 
-                    magnitude += freqByteData[offset + j]; 
-                magnitude = magnitude / multiplier; 
-                var magnitude2 = freqByteData[i * multiplier]; 
-                analyserContext.fillStyle = "hsl( " + Math.round((i*360)/numBars) + ", 100%, 50%)"; 
-                analyserContext.fillRect(i * SPACING, canvasHeight, BAR_WIDTH, -magnitude); 
-            } 
-        } */
-
     rafID = window.requestAnimationFrame(updateAnalysers);
 }
 
