@@ -26,7 +26,7 @@ var canvasWidth, canvasHeight;
 var recIndex = 0;
 var functionId = null;
 var init = 0;
-var curStatus = 'confirm';
+var curStatus = 'init';
 
 var controls = {
     "100100": ["innerbankTransfer", "interbankTransfer"],
@@ -37,11 +37,11 @@ var controls = {
 var controlText = {
     innerbankTransfer: "行内转账",
     interbankTransfer: "跨行转账",
-    "100100":"请问收款人是中行客户还是非中行客户?"
+    "100100": "请问收款人是中行客户还是非中行客户?"
 };
 var parameters = {
     "100101": ["transferInAcc", "transferAmount"],
-    "100102": [],
+    "100102": ["transferInAcc", "transferAmount"],
 };
 var parametersText = {
     transferInAcc: "请问收款人是谁？",
@@ -88,7 +88,7 @@ function ask(str) {
     var formdata = new FormData();
     formdata.append("question", str)
 
-    postMessage("/voiceAssistant/question", formdata, function(data) {
+    postMessage("/voiceAssistant/question", formdata, function (data) {
         audioPlay(data.audio);
     });
 }
@@ -99,94 +99,118 @@ function audioPlay(audio) {
     player.src = audio;
     player.play();
     player.onended = function () {
-        $("#record").click();
+        if ($("#record")[0].classList.contains("recording")) {
+            $("#record")[0].classList.remove("recording");
+        }
+
     };
+    player.oncanplay = function () {
+        $("#record")[0].classList.add("recording");
+    }
+
 }
 function redirect(blob) {
     url = "/voiceAssistant/redirect";
     var form = new FormData();
     form.append("file", blob);
     //form.append("functionId", functionId); 
-    postMessage(url, form, function(data) {
+    curParameter = {};
+    postMessage(url, form, function (data) {
         //var url = data.urlName;
+        if (data.error == "true") {
+            ask("对不起我没有听清，请再说一遍");
+            return;
+        }
         var transferAmount = data.number;
         var transferInAcc = data.person;
         functionId = data.functionId;
-        
-        
+
+
 
         if (transferInAcc == null) {
             var text = controlText[functionId];
-            
             ask(text);
+            curStatus = "confirmService";
         }
         else {
-            if (transferInAcc.indexOf("李"))
-            {
-                functionId="100101";
+            if (transferInAcc.indexOf("李")) {
+                functionId = "100101";
             }
-            else
-            {
-                functionId="100102";
+            else {
+                functionId = "100102";
+            }
+            curParameter.transferInAcc = transferInAcc;
+            if (transferAmount != null) {
+                curParameter.transferAmount = transferAmount;
             }
             $("#" + controls[functionId]).click();
             var param = getStillNullParameter(functionId);
             if (param) {
-                ask(parametersText[param], parameters[param]);
+                ask(parametersText[param]);
+                curStatus = param;
             }
 
         }
-    
-    
+
+
     });
-} 
+}
 
 function answer(blob, str) {
     url = "/voiceAssistant/answer";
     var form = new FormData();
     form.append("file", blob);
     form.append("functionId", functionId);
-    postMessage(url, form, function(data) {
+    postMessage(url, form, function (data) {
 
-        if(str == "confirm")
-        {
-            if (data.answer.indexOf("中行") >=0 || data.answer.indexOf("其他") >= 0)
-            {
-                if (data.answer.indexOf("中行") >=0 )
-                {
+        if (data.error == "true") {
+            ask("对不起我没有听清，请再说一遍");
+            return;
+        }
+
+        if (str == "confirmService") {
+            if (data.answer.indexOf("中行") >= 0 || data.answer.indexOf("其他") >= 0) {
+                if (data.answer.indexOf("中行") >= 0) {
                     functionId = "100101";
                 }
-                else
-                {
+                else {
                     functionId = "100102";
                 }
                 $("#" + controls[functionId]).click();
+
+                var param = getStillNullParameter(functionId);
+                if (param) {
+                    ask(parametersText[param]);
+                    curStatus = param;
+                }
             }
         }
-        else if (str == "transferAmount")
-        {
-            var reg = new RegExp("^[0-9]*$");
-            if (reg.test(data.answer))
-            {
+        else {
+
+            if (str == "transferAmount") {
+                var reg = new RegExp("^[0-9]*$");
+                if (reg.test(data.answer)) {
+                    alert(data.answer);
+                    curParameter[str] = data.answer
+                }
+                else
+                {
+                    ask("对不起，我没有听清，请再说一遍");
+                }
+            }
+            else if (str == "transferInAcc") {
                 alert(data.answer);
-                curParameter[str] = data.answer
+                curParameter[str] = data.answer;
             }
-            
-
-        }
-        else if (str == "transferInAcc")
-        {
-            alert(data.answer);
-            curParameter[str] = data.answer;    
-        }
-        var param = getStillNullParameter(functionId);
-        if (param) {
-            ask(parametersText[param]);
-            curStatus = param;
+            var param = getStillNullParameter(functionId);
+            if (param) {
+                    ask(parametersText[param]);
+                    curStatus = param;
+                }
         }
 
-    } );
-} 
+    });
+}
 
 function getStillNullParameter(founctionId) {
     for (var i in parameters[founctionId]) {
@@ -198,7 +222,7 @@ function getStillNullParameter(founctionId) {
 }
 
 function doneEncoding(blob) {
-    if (functionId == null ) {
+    if (functionId == null) {
         redirect(blob);
     }
     else {
@@ -219,22 +243,9 @@ function toggleRecording(e) {
 
     } else {
         // start recording 
-        if (init == 0) {
+        if (curStatus == "init") {
 
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = callback;
-            var callback = function (data) {
-                audioPlay(data.audio);
-
-            };
-            url = "/voiceAssistant/question";
-            //xhr.open("POST", url); 
-            var form = new FormData();
-            form.append("question", "请问你需要什么帮助？");
-            form.append("functionId", functionId);
-            //xhr.send(form); 
-            postMessage(url, form, callback);
-            init = 1;
+            ask("请问您需要什么帮助？");
 
 
         }
