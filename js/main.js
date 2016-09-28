@@ -136,47 +136,54 @@ function redirect(blob) {
                 ask(parametersText[param]);
                 curStatus = param;
             }
+            else
+            {
+                curStatus = "init";
+                functionId = null;
+            }
 			return;
 		}
-
-		if(transferAmount != null)
-		{
-            curParameter["transferAmount"] = transferAmount;
-		}
-        if (transferInAcc == null) {
-            var text = controlText[functionId];
-            ask(text);
-            curStatus = "confirmService";
-        }
-        else {
-
-            if (transferInAcc.indexOf("李") >=0 ) {
-                functionId = "100101";
+        if (functionId == "100100")
+        {
+            if(transferAmount != null)
+            {
+                curParameter["transferAmount"] = transferAmount;
+            }
+            if (transferInAcc == null) {
+                var text = controlText[functionId];
+                ask(text);
+                curStatus = "confirmService";
             }
             else {
-                functionId = "100102";
-            }
-            curParameter.transferInAcc = transferInAcc;
-            if (transferAmount != null) {
-                curParameter.transferAmount = transferAmount;
-            }
-            $("#" + controls[functionId]).click();
-			$("#transferAmount").val(transferAmount);
-			$("#transferInAcc").val(transferInAcc);
-            var param = getStillNullParameter(functionId);
-            if (param) {
-                ask(parametersText[param]);
-                curStatus = param;
-            }
-			else
-			{
-				ask("您确定要给"+curParameter["transferInAcc"]+"转账"+curParameter["transferAmount"]+"元吗？，请说确定或取消。");
-				curStatus="confirm"
-			}
 
+                if (transferInAcc.indexOf("李") >=0 ) {
+                    functionId = "100101";
+                }
+                else {
+                    functionId = "100102";
+                }
+                curParameter.transferInAcc = transferInAcc;
+                if (transferAmount != null) {
+                    curParameter.transferAmount = transferAmount;
+                }
+                $("#" + controls[functionId]).click();
+			    $("#transferAmount").val(transferAmount);
+			    $("#transferInAcc").val(transferInAcc);
+                var param = getStillNullParameter(functionId);
+                if (param) {
+                    ask(parametersText[param]);
+                    curStatus = param;
+                }
+                else
+                {
+                    ask("您确定要给"+curParameter["transferInAcc"]+"转账"+curParameter["transferAmount"]+"元吗？，请说确定或取消。");
+                    curStatus="confirm"
+                }
+            }
+            return;
         }
-
-
+        
+        
     });
 }
 
@@ -241,6 +248,8 @@ function answer(blob, str) {
 				{
 					ask("已取消");
 				}
+                curStatus = "init";
+                functionId = null;
 				return;
 			}
             var param = getStillNullParameter(functionId);
