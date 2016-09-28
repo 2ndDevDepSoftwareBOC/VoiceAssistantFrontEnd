@@ -30,9 +30,13 @@ var curStatus = 'init';
 
 var controls = {
     "100100": ["innerbankTransfer", "interbankTransfer"],
-    "100103": "queryBill",
     "100101": "innerbankTransfer",
-    "100102": "interbankTransfer"
+    "100102": "interbankTransfer",
+    "100103": "crossborderTransfer",
+    "101100": "checkBalance",
+    "101101": "transactionDetail",
+    "102100": "queryBill",
+    "102101": "paybackBill"
 };
 var controlText = {
     innerbankTransfer: "行内转账",
