@@ -156,7 +156,7 @@ function redirect(blob) {
             }
             else {
 
-                if (transferInAcc.indexOf("李") >=0 ) {
+                if (transferInAcc.indexOf("贾") >=0 ) {
                     functionId = "100101";
                 }
                 else {
@@ -240,8 +240,8 @@ function answer(blob, str) {
 				if(data.answer.indexOf("确") >=0)
 				{
 					ask("您办理的业务已经完成，请您查询动账通知或者余额。");
-                    alert("您办理的业务已经完成，请您查询动账通知或者余额。");
-                    
+                    // alert("您办理的业务已经完成，请您查询动账通知或者余额。");
+                    $(".right").html("<div>您办理的业务已经完成，请您查询动账通知或者余额。</div>");
 
 				}
 				else
